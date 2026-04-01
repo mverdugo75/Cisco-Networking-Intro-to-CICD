@@ -1,0 +1,23 @@
+---
+# Playbook: show_vlans.yml
+# Purpose: Collect and display all VLANs configured on switches
+# Usage: ansible-playbook -i inventory/digital-twin/hosts.ini playbooks/show_vlans.yml
+
+- name: Show VLANs on switches
+  hosts: switches
+  gather_facts: false
+
+  tasks:
+    - name: Collect and parse 'show vlan brief'
+      ansible.utils.cli_parse:
+        command: show vlan brief
+        parser:
+          name: ansible.netcommon.pyats
+        set_fact: vlans_parsed
+
+    - name: Display VLANs
+      ansible.builtin.debug:
+        msg: "VLAN {{ item.key | replace('vlan', '') }}  {{ item.value.vlan_name }}  {{ item.value.vlan_status }}"
+      loop: "{{ vlans_parsed.vlan | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"

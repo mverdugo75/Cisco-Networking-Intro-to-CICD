@@ -1,0 +1,24 @@
+all:
+  children:
+    network_devices:
+      children:
+        routers:
+          hosts:
+            PROD-RTR-11:
+              ansible_host: 198.18.135.11
+            PROD-RTR-12:
+              ansible_host: 198.18.135.12
+        switches_core:
+          hosts:
+            PROD-CORE-13:
+              ansible_host: 198.18.135.13
+            PROD-CORE-14:
+              ansible_host: 198.18.135.14
+        switches_access:
+          hosts:
+            PROD-ACC-15:
+              ansible_host: 198.18.135.15
+            PROD-ACC-16:
+              ansible_host: 198.18.135.16
+            PROD-ACC-17:
+              ansible_host: 198.18.135.17

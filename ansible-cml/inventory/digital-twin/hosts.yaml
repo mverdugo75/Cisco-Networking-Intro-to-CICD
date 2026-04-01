@@ -1,0 +1,20 @@
+all:
+  children:
+    routers:
+      hosts:
+        TEST-RTR-21:
+          ansible_host: 198.18.135.21
+    switches:
+      children:
+        switches_core:
+          hosts:
+            TEST-CORE-22:
+              ansible_host: 198.18.135.22
+            TEST-CORE-23:
+              ansible_host: 198.18.135.23
+        switches_access:
+          hosts:
+            TEST-ACC-24:
+              ansible_host: 198.18.135.24
+            TEST-ACC-25:
+              ansible_host: 198.18.135.25
