@@ -1,7 +1,4 @@
 name: Network Automation Pipeline
-defaults:
-  run:
-    working-directory: ${{ github.workspace }}
 on:
   push:
     branches: [main]
@@ -24,7 +21,7 @@ jobs:
           pip install pyats genie ansible --quiet 
           ansible-galaxy collection install cisco.ios
       - name: Run pre-check snapshot
-        run: python tests/pre_check.py
+        run: python $GITHUB_WORKSPACE/tests/pre_check.py
       - name: Upload pre-snapshot artifact
         uses: actions/upload-artifact@v4
         with:
@@ -67,4 +64,4 @@ jobs:
         with:
           name: pre-snapshot
       - name: Run post-check validation
-        run: python tests/post_check.py
+        run: python $GITHUB_WORKSPACE/tests/post_check.py
