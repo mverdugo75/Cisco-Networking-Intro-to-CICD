@@ -36,7 +36,12 @@ jobs:
       - name: Detect changed playbook
         id: changed
         run: |
-          CHANGED=$(git diff --name-only HEAD~1 HEAD -- '*.yaml' '*.yml' | head -n 1)
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.yaml' '*.yml' | head -n 1)
+          else
+            CHANGED=$(git diff --name-only HEAD~1 HEAD -- '*.yaml' '*.yml' | head -n 1)
+          fi
+
           if [ -z "$CHANGED" ]; then
             echo "No changed playbook detected, skipping deploy."
             echo "playbook=" >> $GITHUB_OUTPUT
