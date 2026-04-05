@@ -10,9 +10,6 @@ on:
       - 'ansible-cml/playbooks/**.yaml'
 env:
   ANSIBLE_HOST_KEY_CHECKING: "False"
-defaults:
-  run:
-    shell: wsl-bash {0}
 jobs:
   pre_check:
     runs-on: self-hosted
