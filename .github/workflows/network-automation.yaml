@@ -1,5 +1,4 @@
 name: Network Automation Pipeline
-
 on:
   push:
     branches: [main]
@@ -9,29 +8,23 @@ on:
     branches: [main]
     paths:
       - 'ansible-cml/playbooks/**.yaml'
-
 env:
   ANSIBLE_HOST_KEY_CHECKING: "False"
-
 jobs:
   pre_check:
     runs-on: self-hosted
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Install dependencies
-        run: pip install pyats genie ansible cisco.ios --quiet
-
+        run: wsl bash -c "pip install pyats genie ansible cisco.ios --quiet"
       - name: Run pre-check snapshot
-        run: python tests/pre_check.py
-
+        run: wsl bash -c "cd $(wsl wslpath '${{ github.workspace }}') && python tests/pre_check.py"
       - name: Upload pre-snapshot artifact
         uses: actions/upload-artifact@v4
         with:
           name: pre-snapshot
           path: pre_snapshot.json
-
   deploy:
     runs-on: self-hosted
     needs: pre_check
@@ -40,38 +33,34 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 2  # Needed to diff against the previous commit
-
       - name: Install dependencies
-        run: pip install ansible cisco.ios --quiet
-
+        run: wsl bash -c "pip install ansible cisco.ios --quiet"
       - name: Detect changed playbook
         id: changed
         run: |
-          CHANGED=$(git diff --name-only HEAD~1 HEAD -- '*.yaml' | head -n 1)
-          echo "playbook=$CHANGED" >> $GITHUB_OUTPUT
-
+          $CHANGED = wsl bash -c "cd $(wsl wslpath '${{ github.workspace }}') && git diff --name-only HEAD~1 HEAD -- '*.yaml' | head -n 1"
+          echo "playbook=$CHANGED" >> $env:GITHUB_OUTPUT
       - name: Deploy changes
         run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            ansible-playbook ${{ steps.changed.outputs.playbook }} -i inventory/digital-twin/hosts.yaml
-          else
-            ansible-playbook ${{ steps.changed.outputs.playbook }} -i inventory/prod/hosts.yaml
-          fi
-
+          $WSL_WORKSPACE = wsl wslpath '${{ github.workspace }}'
+          if ("${{ github.event_name }}" -eq "pull_request") {
+            wsl bash -c "cd $WSL_WORKSPACE && ansible-playbook ${{ steps.changed.outputs.playbook }} -i inventory/digital-twin/hosts.yaml"
+          } else {
+            wsl bash -c "cd $WSL_WORKSPACE && ansible-playbook ${{ steps.changed.outputs.playbook }} -i inventory/prod/hosts.yaml"
+          }
   post_check:
     runs-on: self-hosted
     needs: deploy
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Install dependencies
-        run: pip install pyats genie --quiet
-
+        run: wsl bash -c "pip install pyats genie --quiet"
       - name: Download pre-snapshot artifact
         uses: actions/download-artifact@v4
         with:
           name: pre-snapshot
-
       - name: Run post-check validation
-        run: python tests/post_check.py
+        run: |
+          $WSL_WORKSPACE = wsl wslpath '${{ github.workspace }}'
+          wsl bash -c "cd $WSL_WORKSPACE && python tests/post_check.py"
