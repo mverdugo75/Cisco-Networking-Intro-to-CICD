@@ -1,0 +1,121 @@
+---
+# =============================================================================
+# Cisco IOS MOTD Banner Playbook
+# =============================================================================
+# Description : Configures the Message of the Day (MOTD) banner on Cisco
+#               IOS switches and routers.
+# Supported   : Cisco IOS, IOS-XE (ios collection)
+# Requirements: ansible-galaxy collection install cisco.ios
+# =============================================================================
+
+- name: Configure MOTD Banner on Cisco IOS Devices
+  hosts: all
+  gather_facts: false
+  connection: network_cli
+
+  vars:
+    # -------------------------------------------------------------------------
+    # Banner text — edit this block to customise your MOTD.
+    # Avoid using the '#' character as it is the IOS default delimiter.
+    # -------------------------------------------------------------------------
+    motd_banner: |
+      **************************************************************************
+      *                        AUTHORISED ACCESS ONLY                          *
+      *                                                                        *
+      *  This system is the property of NACHO Corporation. Unauthorised access *
+      *  or use is strictly prohibited and may be subject to criminal and/or   *
+      *  civil penalties under applicable law.                                 *
+      *                                                                        *
+      *  All activity on this device is monitored and recorded. By continuing  *
+      *  to access this system you consent to such monitoring.                 *
+      *                                                                        *
+      *  If you are not an authorised user, disconnect IMMEDIATELY!            *
+      **************************************************************************
+
+    # IOS banner delimiter — must not appear inside the banner text itself
+    banner_delimiter: "@"
+
+    # Set to true to also clear the login and exec banners
+    clear_other_banners: false
+
+  tasks:
+
+    # -------------------------------------------------------------------------
+    # Pre-flight checks
+    # -------------------------------------------------------------------------
+    - name: Verify device connectivity
+      cisco.ios.ios_command:
+        commands:
+          - show version
+      register: version_output
+      tags: [always, validate]
+
+    - name: Display device platform info
+      ansible.builtin.debug:
+        msg: >-
+          Connected to {{ inventory_hostname }} —
+          {{ version_output.stdout[0].split('\n')[0] }}
+      tags: [always, validate]
+
+    # -------------------------------------------------------------------------
+    # Apply the new MOTD banner
+    # -------------------------------------------------------------------------
+    - name: Apply MOTD banner
+      cisco.ios.ios_banner:
+        banner: motd
+        text: "{{ motd_banner }}"
+        state: present
+      notify: Save running config
+      tags: [configure]
+
+    # -------------------------------------------------------------------------
+    # Optionally clear login / exec banners for a clean slate
+    # -------------------------------------------------------------------------
+    - name: Clear login banner (optional)
+      cisco.ios.ios_banner:
+        banner: login
+        state: absent
+      when: clear_other_banners | bool
+      notify: Save running config
+      tags: [configure]
+
+    - name: Clear exec banner (optional)
+      cisco.ios.ios_banner:
+        banner: exec
+        state: absent
+      when: clear_other_banners | bool
+      notify: Save running config
+      tags: [configure]
+
+    # -------------------------------------------------------------------------
+    # Verification
+    # -------------------------------------------------------------------------
+    - name: Verify banner was applied
+      cisco.ios.ios_command:
+        commands:
+          - show banner motd
+      register: new_banner
+      tags: [validate, configure]
+
+    - name: Assert banner contains expected text
+      ansible.builtin.assert:
+        that:
+          - "'AUTHORISED ACCESS ONLY' in new_banner.stdout[0]"
+        fail_msg: "Banner verification FAILED on {{ inventory_hostname }}"
+        success_msg: "Banner verification PASSED on {{ inventory_hostname }}"
+      tags: [validate, configure]
+
+    - name: Display applied banner
+      ansible.builtin.debug:
+        msg: "{{ new_banner.stdout[0] }}"
+      tags: [validate]
+
+  # ---------------------------------------------------------------------------
+  # Handlers
+  # ---------------------------------------------------------------------------
+  handlers:
+    - name: Save running config
+      cisco.ios.ios_command:
+        commands:
+          - write memory
+      listen: Save running config
