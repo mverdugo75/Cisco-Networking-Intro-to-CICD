@@ -4,11 +4,11 @@ on:
   push:
     branches: [main]
     paths:
-      - '~/ansible-workshop/playbooks/**.yaml'
+      - 'playbooks/**.yaml'
   pull_request:
     branches: [main]
     paths:
-      - '~/ansible-workshop/playbooks/**.yaml'
+      - 'playbooks/**.yaml'
 
 env:
   ANSIBLE_HOST_KEY_CHECKING: "False"
