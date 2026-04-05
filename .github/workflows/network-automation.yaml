@@ -33,11 +33,14 @@ jobs:
     runs-on: self-hosted
     needs: pre_check
     steps:
+      - name: Fetch base branch
+        run: git fetch origin main --depth=1
+
       - name: Detect changed playbook
         id: changed
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.yaml' '*.yml' | head -n 1)
+            CHANGED=$(git diff --name-only origin/main...HEAD -- '*.yaml' '*.yml' | head -n 1)
           else
             CHANGED=$(git diff --name-only HEAD~1 HEAD -- '*.yaml' '*.yml' | head -n 1)
           fi
