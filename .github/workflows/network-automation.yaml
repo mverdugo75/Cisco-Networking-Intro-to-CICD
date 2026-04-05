@@ -33,20 +33,19 @@ jobs:
     runs-on: self-hosted
     needs: pre_check
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-      - name: Install dependencies
-        run: |
-          pip install ansible --quiet 
-          ansible-galaxy collection install cisco.ios
       - name: Detect changed playbook
         id: changed
         run: |
-          CHANGED=$(git diff --name-only HEAD~1 HEAD -- '*.yaml' | head -n 1)
-          echo "playbook=$CHANGED" >> $GITHUB_OUTPUT
+          CHANGED=$(git diff --name-only HEAD~1 HEAD -- '*.yaml' '*.yml' | head -n 1)
+          if [ -z "$CHANGED" ]; then
+            echo "No changed playbook detected, skipping deploy."
+            echo "playbook=" >> $GITHUB_OUTPUT
+          else
+            echo "playbook=$CHANGED" >> $GITHUB_OUTPUT
+          fi
+
       - name: Deploy changes
+        if: steps.changed.outputs.playbook != ''
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             ansible-playbook ${{ steps.changed.outputs.playbook }} -i inventory/digital-twin/hosts.yaml
