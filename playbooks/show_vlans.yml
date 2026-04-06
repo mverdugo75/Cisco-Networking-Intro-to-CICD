@@ -1,9 +1,9 @@
 ---
 # Playbook: show_vlans.yml
-# Purpose: Collect and display all VLANs configured on switches
+# Purpose: Collect and display brief VLAN information for all configured on switches
 # Usage: ansible-playbook -i inventory/digital-twin/hosts.yml
 
-- name: Show VLANs on switches
+- name: Show VLANs on all switches
   hosts: switches
   gather_facts: false
 
