@@ -38,23 +38,19 @@ jobs:
 
       - name: Detect changed playbook
         id: changed
-        run: |
-          CHANGED=$(git diff --name-only origin/main...HEAD -- '*.yaml' '*.yml' | head -n 1)
-
-          if [ -z "$CHANGED" ]; then
-            echo "No changed playbook detected, skipping deploy."
-            echo "playbook=" >> $GITHUB_OUTPUT
-          else
-            echo "playbook=$CHANGED" >> $GITHUB_OUTPUT
-          fi
+        uses: tj-actions/changed-files@v46
+        with:
+          files: |
+            playbooks/**.yml
+            playbooks/**.yaml
 
       - name: Deploy changes
-        if: steps.changed.outputs.playbook != ''
+        if: steps.changed.outputs.any_changed == 'true'
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            ansible-playbook ${{ steps.changed.outputs.playbook }} -i inventory/digital-twin/hosts.yaml
+            ansible-playbook ${{ steps.changed.outputs.all_changed_files }} -i inventory/digital-twin/hosts.yaml
           else
-            ansible-playbook ${{ steps.changed.outputs.playbook }} -i inventory/prod/hosts.yaml
+            ansible-playbook ${{ steps.changed.outputs.all_changed_files }} -i inventory/prod/hosts.yaml
           fi
   post_check:
     runs-on: self-hosted
