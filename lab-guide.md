@@ -13,15 +13,19 @@ Approximate time: 1.5hr
 
 ### 1.1 What is Ansible?
 
-> *Instructor: Brief conceptual overview — what problem does Ansible solve? Why do network engineers care?*
+Discussion questions:
+- What problem does Ansible solve?
+- Why is it important for Network Engineers?
 
+The benefits of Ansible include,
 - Agentless automation — how it works over SSH/NETCONF
 - Idempotency — what it means and why it matters in networking
 - Key terms to know: **Control node**, **Managed nodes**, **Playbook**, **Task**, **Module**
 
 ### 1.2 Ansible Project Structure
 
-> *Instructor: Walk through the folder layout students will be working with. Remind students that all work should be done inside the WSL filesystem — `~/ansible-cml/`*
+As Ansible runs only on Linux, we will be working solely in WSL on the Windows jumphost.
+The following is an overview of the directory structure of our Ansible project:
 
 ```
 ansible-cml
@@ -40,12 +44,11 @@ ansible-cml
 ├── playbooks
 │   ├── show_vlans.yml
 │   └── verify_vlans.yml
-├── roles
 └── vars
     └── vlans.yml
 ```
 
-Brief description of the purpose of each component:
+Key components to walk through include,
 
 - `ansible.cfg` — project-level configuration file
 - `inventory/` — defines the devices Ansible will manage
@@ -94,7 +97,7 @@ all:
 ### 1.4 Variables
 - Where to define credentials (vars vs group_vars vs vault)
 - Common network variables: `ansible_network_os`, `ansible_connection`, `ansible_become`
-- Brief mention of **Ansible Vault** for credential security (no deep dive needed)
+- Brief mention of **Ansible Vault** for credential security
 
 **Example `prod/group_vars/cisco.yml`:**
 
@@ -108,12 +111,13 @@ ansible_become_method: enable
 ```
 
 ### 1.5 `ansible.cfg` Walkthrough
-Understand the key defaults used throughout the lab.
+The `ansible.cfg` file represents default configuration values used throughout the environment.
+This includes the inventory to use without a specified value and SSH connection information.
 
 ```ini
 [defaults]
 inventory = ./inventory/digital-twin/hosts.yaml
-remote_user = admin
+remote_user = ansible
 host_key_checking = False
 ```
 
@@ -123,29 +127,28 @@ host_key_checking = False
 
 ### 2.1 Your First Command — `ansible` Ad-Hoc
 
-> *(Instructor: Show that Ansible can be used without a playbook for quick tasks)*
+While the goal is to utilize Ansible in a structured pipeline, it can also be used as needed for ad-hoc checks!
 
-- Syntax: `ansible <host/group> -m <module> -a <args>`
-- Run a ping against all devices to confirm connectivity
+- Syntax: `ansible <host/group> -m <module> -a <args> -i <inventory-path>`
+- Run a connection test/ping against all devices to confirm connectivity
 
 **Lab Task 2.1 — Ad-Hoc Ping:**
 
 ```bash
-ansible all -m cisco.ios.ios_ping
+ansible all -m cisco.ios.ios_facts
 ```
 
-> *(Instructor: Explain the difference between Ansible's `ping` module and ICMP ping. For network devices, use `cisco.ios.ios_ping` or simply confirm SSH connectivity.)*
+Discussion point: Why did we use `ios_facts` instead of doing a ping?
 
 ### 2.2 Anatomy of a Playbook
-
-> *(Instructor: Walk through each part of a basic playbook before running anything)*
+Now, walking through a basic playbook, let's take a look at what each part means and how its used.
 
 - `hosts:` — which inventory targets to run against
 - `gather_facts:` — typically disabled for network devices
 - `tasks:` — ordered list of modules to execute
 - `name:` — human-readable label for each task
 
-**Example skeleton to walk through:**
+Below is an example skeleton for us to work through:
 
 ```yaml
 ---
@@ -162,7 +165,7 @@ ansible all -m cisco.ios.ios_ping
 
 ### 2.3 Brownfield Discovery — Mapping the Network
 
-> *(Instructor: Frame this section — "You already have a network running. Let's use Ansible to document what's there.")*
+You already have a network... How can we get started with using Ansible in a brownfield environment? Visibility!
 
 Topics to cover:
 - Using `cisco.ios.ios_command` to run `show` commands
@@ -192,7 +195,7 @@ Topics to cover:
 
 ### 2.4 Structured Data with `ios_facts`
 
-> *(Instructor: Show the difference between raw command output and structured facts)*
+It is important to note the difference between raw data captured and structured data!
 
 - Using `cisco.ios.ios_facts` to gather structured device data
 - Why structured data matters for automation at scale
@@ -218,12 +221,9 @@ Topics to cover:
 ---
 
 ## Section 3: Pushing Changes with Ansible
-
-> **Instructor Note:** Before this section, take a moment to reinforce idempotency. Remind students that a well-written playbook should be safe to run multiple times without causing unintended changes.
+Before we jump into pushing changes with Ansible, let's spend a moment talking about idempotency. This is a crucial characteristic of well-written Ansible playbooks.
 
 ### 3.1 Making Changes Safely — `check` Mode
-
-> *(Instructor: Show check mode before making any real changes — builds good habits)*
 
 - What `--check` does and when to use it
 - Its limitations on network devices (not all modules support it fully)
@@ -234,7 +234,7 @@ ansible-playbook playbooks/push_changes.yml --check
 
 ### 3.2 Lab Task — Updating Interface Descriptions
 
-> *(Instructor: Good first change — highly visible, low risk, easy to verify)*
+Let's start with a low risk change. We will modify the interface descriptions for access switch uplinks.
 
 - Using `cisco.ios.ios_interfaces` to set interface descriptions
 - Verifying the change with a follow-up `show` task
@@ -268,7 +268,7 @@ ansible-playbook playbooks/push_changes.yml --check
 
 ### 3.3 Lab Task — Adding a VLAN
 
-> *(Instructor: Slightly more impactful change — good for showing state management)*
+In this task, we'll go for a more disruptive change. 
 
 - Using `cisco.ios.ios_vlans` to configure VLANs
 - Explaining `state: merged` vs `state: replaced` vs `state: deleted`
@@ -299,8 +299,6 @@ ansible-playbook playbooks/push_changes.yml --check
 ```
 
 ### 3.4 Saving the Configuration
-
-> *(Instructor: Don't skip this — a common gotcha for those new to IOS automation)*
 
 - Difference between running-config and startup-config
 - Using `cisco.ios.ios_config` with `save_when: always` or a dedicated save task
