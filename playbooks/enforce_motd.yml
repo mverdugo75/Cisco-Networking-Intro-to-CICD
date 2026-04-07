@@ -1,0 +1,38 @@
+---
+# =============================================================================
+# Cisco IOS MOTD Banner Playbook
+# =============================================================================
+# Description : Configures the Message of the Day (MOTD) banner on Cisco
+#               IOS switches and routers.
+# Supported   : Cisco IOS, IOS-XE (ios collection)
+# Requirements: ansible-galaxy collection install cisco.ios
+# =============================================================================
+
+- name: Enforce MOTD Banner on Cisco IOS Devices
+  hosts: all
+  gather_facts: false
+  connection: network_cli
+
+  vars_files:
+    - ../group_vars/all/motd.yml
+
+  tasks:
+    - name: Apply MOTD banner
+      cisco.ios.ios_banner:
+        banner: motd
+        text: "{{ motd }}"
+        state: present
+
+    - name: Verify banner was applied
+      cisco.ios.ios_command:
+        commands:
+          - show banner motd
+      register: new_banner
+
+    - name: Display applied banner
+      ansible.builtin.debug:
+        msg: "{{ new_banner.stdout[0] }}"
+
+    - name: Save config
+      cisco.ios.ios_config:
+        save_when: modified

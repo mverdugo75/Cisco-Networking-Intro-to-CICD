@@ -1,0 +1,22 @@
+---
+- name: Enforce VLAN Source of Truth
+  hosts: switches
+  gather_facts: no
+
+  tasks:
+    - name: Enforce VLANs from source of truth
+      cisco.ios.ios_vlans:
+        config: "{{ vlans }}"
+        state: replaced
+
+    - name: Confirm applied VLANs
+      cisco.ios.ios_facts:
+        gather_subset: all
+
+    - name: Display configured VLANs
+      ansible.builtin.debug:
+        msg: "{{ ansible_net_vlans }}"
+
+    - name: Save configuration
+      cisco.ios.ios_config:
+        save_when: always
