@@ -282,10 +282,10 @@ Let's start with a low risk change. We will modify the interface descriptions fo
 
 ### 3.3 Lab Task — Enforcing VLANs
 
-In this task, we'll go for a more disruptive change. 
+In this task, we'll go for a more disruptive change, enforcing specific VLANs.
 
 - Using `cisco.ios.ios_vlans` to configure VLANs
-- Explaining `state: merged` vs `state: replaced` vs `state: deleted`
+- Explaining `state: replaced` vs `state: overriden` vs `state: deleted`
 
 ```yaml
 ---
@@ -302,10 +302,12 @@ In this task, we'll go for a more disruptive change.
     - name: Confirm applied VLANs
       cisco.ios.ios_facts:
         gather_subset: all
+        gather_network_resources:
+          - vlans
 
     - name: Display configured VLANs
       ansible.builtin.debug:
-        msg: "{{ ansible_net_vlans }}"
+        msg: "{{ ansible_network_resources.vlans }}"
 ```
 
 ### 3.4 Saving the Configuration
