@@ -15,6 +15,8 @@ env:
 jobs:
   pre_check:
     runs-on: self-hosted
+    env:
+      TESTBED_ENV: ${{ github.event_name == 'pull_request' && 'lab' || 'prod' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -32,6 +34,8 @@ jobs:
   deploy:
     runs-on: self-hosted
     needs: pre_check
+    env:
+      TESTBED_ENV: ${{ github.event_name == 'pull_request' && 'lab' || 'prod' }}
     steps:
       - name: Fetch base branch
         run: git fetch origin main --depth=50
@@ -55,6 +59,8 @@ jobs:
   post_check:
     runs-on: self-hosted
     needs: deploy
+    env:
+      TESTBED_ENV: ${{ github.event_name == 'pull_request' && 'lab' || 'prod' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

@@ -435,68 +435,40 @@ Topics to cover:
 - `if` / conditions — controlling when jobs trigger
  
 **Workshop `network-automation.yaml` skeleton to walk through:**
- 
+
 ```yaml
+# Snippet of ~/ansible-cml/.github/workflows/network-automation.yaml
 name: Network Automation Pipeline
- 
 on:
   push:
     branches: [main]
+    paths:
+      - 'playbooks/**.yaml'
+      - 'playbooks/**.yml'
   pull_request:
     branches: [main]
- 
+    paths:
+      - 'playbooks/**.yaml'
+      - 'playbooks/**.yml'
 env:
   ANSIBLE_HOST_KEY_CHECKING: "False"
- 
 jobs:
   pre_check:
     runs-on: self-hosted
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
- 
       - name: Install dependencies
-        run: pip install pyats genie ansible cisco.ios --quiet
- 
+        run: | 
+          pip install pyats genie ansible --quiet 
+          ansible-galaxy collection install cisco.ios
       - name: Run pre-check snapshot
-        run: python tests/pre_check.py
- 
+        run: python $GITHUB_WORKSPACE/tests/pre_check.py
       - name: Upload pre-snapshot artifact
         uses: actions/upload-artifact@v4
         with:
           name: pre-snapshot
           path: pre_snapshot.json
- 
-  deploy:
-    runs-on: self-hosted
-    needs: pre_check
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
- 
-      - name: Install dependencies
-        run: pip install ansible cisco.ios --quiet
- 
-      - name: Deploy changes
-        run: ansible-playbook playbooks/push_changes.yml
- 
-  post_check:
-    runs-on: self-hosted
-    needs: deploy
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
- 
-      - name: Install dependencies
-        run: pip install pyats genie --quiet
- 
-      - name: Download pre-snapshot artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: pre-snapshot
- 
-      - name: Run post-check validation
-        run: python tests/post_check.py
 ```
  
 ### 5.3 GitHub Actions Runner
@@ -528,24 +500,27 @@ Key concepts for this section:
 The testbed maps closely to the inventory files we created for Ansible! Just with different syntax... 
  
 ```yaml
-# tests/testbed/lab_testbed.yaml
+# Snippet of tests/testbed/lab_testbed.yaml
 testbed:
-  name: workshop_lab
- 
+  name: Network_Testbed
+  credentials:
+    default:
+      username: "ansible"
+      password: "C1sco12345"
 devices:
-  sw1:
-    os: ios
-    type: switch
-    credentials:
-      default:
-        username: admin
-        password: "{{ lab_password }}"
+  TEST-RTR-21:
+    os: iosxe
+    type: router
     connections:
-      defaults:
-        class: unicon.Unicon
       cli:
         protocol: ssh
-        ip: 192.168.x.x
+        ip: 198.18.135.21
+
+topology:
+  TEST-RTR-21:
+    interfaces:
+      GigabitEthernet1:
+        type: ethernet
 ```
  
 ### 6.3 Pre-Check Script Walkthrough
@@ -561,9 +536,11 @@ What the pre-check script does:
 ```python
 from genie.testbed import load
 import json
+import os
  
 # Load the testbed
-testbed = load("tests/testbed/lab_testbed.yml")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+testbed = load(os.path.join(BASE_DIR, "tests/testbed/lab_testbed.yaml"))
  
 snapshot = {}
  
@@ -572,9 +549,8 @@ for device_name, device in testbed.devices.items():
  
     # Capture structured state
     snapshot[device_name] = {
-        "interfaces": device.parse("show interfaces"),
+        "interfaces": device.parse("show ip interface brief"),
         "vlans": device.parse("show vlan brief"),
-        "bgp": device.parse("show ip bgp summary"),  # remove if not applicable
     }
  
     device.disconnect()

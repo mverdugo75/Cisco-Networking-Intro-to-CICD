@@ -3,8 +3,22 @@ from genie.utils.diff import Diff
 import json
 import os
 
+# Load the testbed based on the GitHub Actions context
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-testbed = load(os.path.join(BASE_DIR, "tests/testbed/lab_testbed.yaml"))
+
+testbed_env = os.environ.get("TESTBED_ENV", "lab")  # Default to lab if not set
+
+testbed_map = {
+    "lab": "tests/testbed/lab_testbed.yaml",
+    "prod": "tests/testbed/prod_testbed.yaml",
+}
+
+testbed_path = testbed_map.get(testbed_env)
+
+if testbed_path is None:
+    raise ValueError(f"Unknown TESTBED_ENV: '{testbed_env}'. Must be 'lab' or 'prod'.")
+
+testbed = load(os.path.join(BASE_DIR, testbed_path))
 
 with open("pre_snapshot.json") as f:
     pre_snapshot = json.load(f)
