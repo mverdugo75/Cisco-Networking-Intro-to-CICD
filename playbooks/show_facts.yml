@@ -1,0 +1,13 @@
+---
+- name: Gather IOS Facts
+  hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: Collect device facts
+      cisco.ios.ios_facts:
+        gather_subset: all
+
+    - name: Show hostname and IOS version
+      ansible.builtin.debug:
+        msg: "{{ ansible_net_hostname }} is running {{ ansible_net_version }}"
