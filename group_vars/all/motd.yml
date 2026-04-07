@@ -1,0 +1,15 @@
+motd: |
+  **************************************************************************
+  *                        AUTHORISED ACCESS ONLY!!                        *
+  *                                                                        *
+  *  This system is the property of NACHO Corporation. Unauthorised access *
+  *  or use is strictly prohibited and may be subject to criminal and/or   *
+  *  civil penalties under applicable law. Or I'll find you!               *
+  *                                                                        *
+  *  All activity on this device is monitored and recorded. By continuing  *
+  *  to access this system you consent to such monitoring.                 *
+  *                                                                        *
+  *  If you are not an authorised user, disconnect IMMEDIATELY!            *
+  **************************************************************************
+
+banner_delimiter: "@"

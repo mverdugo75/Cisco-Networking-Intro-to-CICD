@@ -226,15 +226,32 @@ It is important to note the difference between raw data captured and structured 
 ---
 
 ## Section 3: Pushing Changes with Ansible
-Before we jump into pushing changes with Ansible, let's spend a moment talking about idempotency. This is a crucial characteristic of well-written Ansible playbooks.
+
+Discussion Points:
+ - Idempotency by design and philosophy
+ - Idempotency in practice
+
+```
+# Idempotent — checks state before acting
+cisco.ios.ios_vlans:
+  config:
+    - vlan_id: 10
+      name: MANAGEMENT
+
+# NOT idempotent — always pushes the command regardless
+cisco.ios.ios_command:
+  commands:
+    - vlan 10
+```
 
 ### 3.1 Making Changes Safely — `check` Mode
 
+Discussion Points:
 - What `--check` does and when to use it
 - Its limitations on network devices (not all modules support it fully)
 
 ```bash
-ansible-playbook playbooks/push_changes.yml --check
+ansible-playbook playbooks/enforce_vlans.yml --check
 ```
 
 ### 3.2 Lab Task — Updating Interface Descriptions
@@ -245,33 +262,25 @@ Let's start with a low risk change. We will modify the interface descriptions fo
 - Verifying the change with a follow-up `show` task
 
 ```yaml
----
-- name: Update Interface Descriptions
-  hosts: switches
-  gather_facts: no
+# Snippet of ~/ansible-cml/playbooks/enforce_motd.yml
+
+- name: Enforce MOTD Banner on Cisco IOS Devices
+  hosts: all
+  gather_facts: false
+  connection: network_cli
+
+  vars_files:
+    - ../group_vars/all/vlans.yml
 
   tasks:
-    - name: Set interface descriptions
-      cisco.ios.ios_interfaces:
-        config:
-          - name: GigabitEthernet0/1
-            description: "Uplink to Core"
-          - name: GigabitEthernet0/2
-            description: "Server Port"
-        state: merged
-
-    - name: Verify interface descriptions
-      cisco.ios.ios_command:
-        commands:
-          - show interfaces description
-      register: intf_output
-
-    - name: Display result
-      ansible.builtin.debug:
-        var: intf_output.stdout_lines
+    - name: Apply MOTD banner
+      cisco.ios.ios_banner:
+        banner: motd
+        text: "{{ motd }}"
+        state: present
 ```
 
-### 3.3 Lab Task — Adding a VLAN
+### 3.3 Lab Task — Enforcing VLANs
 
 In this task, we'll go for a more disruptive change. 
 
@@ -280,38 +289,34 @@ In this task, we'll go for a more disruptive change.
 
 ```yaml
 ---
-- name: Add VLANs to Switches
+- name: Enforce VLAN Source of Truth
   hosts: switches
   gather_facts: no
 
   tasks:
-    - name: Configure VLANs
+    - name: Enforce VLANs from source of truth
       cisco.ios.ios_vlans:
-        config:
-          - vlan_id: 100
-            name: WORKSHOP_VLAN
-        state: merged
+        config: "{{ vlans }}"
+        state: replaced
 
-    - name: Verify VLANs
-      cisco.ios.ios_command:
-        commands:
-          - show vlan brief
-      register: vlan_output
+    - name: Confirm applied VLANs
+      cisco.ios.ios_facts:
+        gather_subset: all
 
-    - name: Display VLAN table
+    - name: Display configured VLANs
       ansible.builtin.debug:
-        var: vlan_output.stdout_lines
+        msg: "{{ ansible_net_vlans }}"
 ```
 
 ### 3.4 Saving the Configuration
 
-- Difference between running-config and startup-config
-- Using `cisco.ios.ios_config` with `save_when: always` or a dedicated save task
+- Remember running-config vs. startup-config!
+- Using `cisco.ios.ios_config` with `save_when:` or a dedicated save task
 
 ```yaml
     - name: Save configuration
       cisco.ios.ios_config:
-        save_when: always
+        save_when: modified
 ```
 
 ---

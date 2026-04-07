@@ -1,12 +1,12 @@
 ---
 # Defines every VLAN that must exist across switches.
-# 'id': VLAN number as it appears in 'show vlan brief'
+# 'vlan_id': VLAN number as it appears in 'show vlan brief'
 # 'name': exact name configured on the switch
 
-expected_vlans:
-  - id: 100
+vlans:
+  - vlan_id: 100
     name: CORP
-  - id: 150
+  - vlan_id: 150
     name: IOT
-  - id: 200
+  - vlan_id: 200
     name: GUEST
