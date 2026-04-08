@@ -179,7 +179,7 @@ def ping_success_from_genie(parsed: dict[str, Any]) -> Optional[int]:
 
 
 def ping_target(device: Any, addr: str) -> Optional[int]:
-    parsed = _genie_parse(device, "ping", addr=addr, count=3, timeout=1)
+    parsed = _genie_parse(device, "ping vrf Mgmt-vrf", addr=addr, count=3, timeout=1)
     if parsed:
         rate = ping_success_from_genie(parsed)
         if rate is not None:
