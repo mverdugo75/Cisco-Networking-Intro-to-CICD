@@ -214,11 +214,11 @@ def route_present_from_raw(output: str) -> bool:
 
 
 def route_prefix_present(device: Any, prefix: str) -> bool:
-    parsed = _genie_parse(device, "show ip route", route=prefix)
+    parsed = _genie_parse(device, "show ip route vrf", route=prefix)
     if parsed is not None:
         return route_present_from_genie(parsed)
     try:
-        out = device.execute(f"show ip route {prefix}")
+        out = device.execute(f"show ip route vrf {prefix}")
     except Exception:
         return False
     return route_present_from_raw(out)
