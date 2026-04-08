@@ -23,7 +23,7 @@
         text: "{{ motd }}"
         state: present
 
-    - name: Verify banner was applied
+    - name: Verify banner was applied correctly
       cisco.ios.ios_command:
         commands:
           - show banner motd
