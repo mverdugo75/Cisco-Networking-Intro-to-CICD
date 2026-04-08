@@ -13,7 +13,7 @@ management_vrf: Mgmt-vrf
 ping_targets:
   - 8.8.8.8
 
-required_route_prefixes: [0.0.0.0/0]
+required_route_prefixes: [0.0.0.0]
 
 thresholds:
   # Fail post-check if five-second CPU is above this (instant overload).

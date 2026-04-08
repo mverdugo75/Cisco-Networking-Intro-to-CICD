@@ -8,7 +8,7 @@
         commands:
           - show version
           - show ip interface brief
-          - show cdp neighbors
+          - show cdp neighbors detail
       register: discovery_output
     - name: Display output
       ansible.builtin.debug:
