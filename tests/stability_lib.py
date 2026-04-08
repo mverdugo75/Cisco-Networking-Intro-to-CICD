@@ -178,14 +178,24 @@ def ping_success_from_genie(parsed: dict[str, Any]) -> Optional[int]:
         return None
 
 
-def ping_target(device: Any, addr: str) -> Optional[int]:
-    parsed = _genie_parse(device, "ping vrf Mgmt-vrf", addr=addr, count=3, timeout=1)
+def ping_target(device: Any, addr: str, management_vrf: str) -> Optional[int]:
+    """ICMP via management VRF (matches Genie ``ping vrf …`` + IOS fallback)."""
+    parsed = _genie_parse(
+        device,
+        "ping",
+        vrf=management_vrf,
+        addr=addr,
+        count=3,
+        timeout=1,
+    )
     if parsed:
         rate = ping_success_from_genie(parsed)
         if rate is not None:
             return rate
     try:
-        out = device.execute(f"ping {addr} repeat 3 timeout 1")
+        out = device.execute(
+            f"ping vrf {management_vrf} {addr} repeat 3 timeout 1"
+        )
     except Exception:
         return None
     return parse_ping_success_rate(out)
@@ -213,12 +223,18 @@ def route_present_from_raw(output: str) -> bool:
     )
 
 
-def route_prefix_present(device: Any, prefix: str) -> bool:
-    parsed = _genie_parse(device, "show ip route vrf", route=prefix)
+def route_prefix_present(device: Any, prefix: str, management_vrf: str) -> bool:
+    """RIB lookup in management VRF (Genie ``show ip route`` distributor + IOS fallback)."""
+    parsed = _genie_parse(
+        device,
+        "show ip route",
+        vrf=management_vrf,
+        route=prefix,
+    )
     if parsed is not None:
         return route_present_from_genie(parsed)
     try:
-        out = device.execute(f"show ip route vrf {prefix}")
+        out = device.execute(f"show ip route vrf {management_vrf} {prefix}")
     except Exception:
         return False
     return route_present_from_raw(out)
@@ -233,11 +249,13 @@ def collect_device_sample(device: Any, cfg: dict[str, Any]) -> dict[str, Any]:
         "routes_ok": {},
     }
 
+    mgmt_vrf = str(cfg.get("management_vrf") or "Mgmt-vrf")
+
     for addr in cfg.get("ping_targets") or []:
-        sample["ping"][addr] = ping_target(device, addr)
+        sample["ping"][addr] = ping_target(device, addr, mgmt_vrf)
 
     for prefix in cfg.get("required_route_prefixes") or []:
-        sample["routes_ok"][prefix] = route_prefix_present(device, prefix)
+        sample["routes_ok"][prefix] = route_prefix_present(device, prefix, mgmt_vrf)
 
     return sample
 

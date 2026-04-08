@@ -529,7 +529,7 @@ topology:
   
 What the pre-check script does:
 - Connects to all devices using the testbed
-- Samples **platform stability** using **Genie** `device.parse()` where IOS/XE parsers exist: `show processes cpu`, `show memory statistics`, `ping … repeat …`, and `show ip route <prefix>`.
+- Samples **platform stability** using **Genie** `device.parse()` where IOS/XE parsers exist: `show processes cpu`, `show memory statistics`, `ping vrf <management_vrf> … repeat …`, and `show ip route vrf <management_vrf> <prefix>` (VRF name comes from `tests/stability_checks.yaml`).
 - Saves the per-device sample as `pre_snapshot.json` for the post-check job
 - Fails the pipeline if baseline reachability is already broken (e.g. ping not 100%, or a required prefix missing from the RIB)
 

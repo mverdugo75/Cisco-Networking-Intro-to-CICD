@@ -1,10 +1,14 @@
 # Platform-stability gates for CI pre/post checks (edit for your lab topology).
 #
+# management_vrf: VRF for SSH/management — ping and show ip route checks use this VRF.
+#
 # ping_targets: addresses every device must reach with 100% success (before and after deploy).
 #   Use a stable next-hop, loopback, or management default route — not a host that Ansible changes.
 #
-# required_route_prefixes: optional RIB checks (show ip route <prefix>). Leave empty for pure L2
-#   switches or if only ICMP reachability matters. Add prefixes devices should still know after change.
+# required_route_prefixes: optional RIB checks (show ip route vrf <management_vrf> <prefix>).
+#   Leave empty for pure L2 switches or if only ICMP reachability matters.
+
+management_vrf: Mgmt-vrf
 
 ping_targets:
   - 198.18.135.1
